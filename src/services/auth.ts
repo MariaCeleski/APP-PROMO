@@ -1,30 +1,35 @@
-import { supabase } from './supabase';
-import { Alert } from 'react-native';
-// LOGIN
-export async function signIn(identifier: string, password: string) {
-  let email = identifier;
+import { supabase } from "./supabase";
+import { Alert } from "react-native";
 
-  // verifica se é CPF (somente números)
-  const isCPF = /^\d{11}$/.test(identifier);
+// 🔐 LOGIN (EMAIL OU CPF)
+export async function signIn(identifier: string, password: string) {
+  let emailToLogin = identifier;
+
+  // remove tudo que não for número
+  const cleanIdentifier = identifier.replace(/\D/g, "");
+
+  // verifica se é CPF
+  const isCPF = /^\d{11}$/.test(cleanIdentifier);
 
   if (isCPF) {
-    // 🔍 busca email pelo CPF
-    const { data, error } = await supabase
-      .from('users')
-      .select('email')
-      .eq('cpf', identifier)
-      .single();
+    const { data: userData, error } = await supabase
+      .from("users")
+      .select("email")
+      .eq("cpf", cleanIdentifier)
+      .maybeSingle();
 
-    if (error || !data) {
-      throw new Error('CPF não encontrado');
+    if (error) throw error;
+
+    if (!userData?.email) {
+      throw new Error("CPF não encontrado");
     }
 
-    email = data.email;
+    emailToLogin = userData.email;
   }
 
-  // login com email (original ou encontrado)
+  // 🔑 login com email
   const { data, error } = await supabase.auth.signInWithPassword({
-    email,
+    email: emailToLogin,
     password,
   });
 
@@ -33,7 +38,7 @@ export async function signIn(identifier: string, password: string) {
   return data;
 }
 
-// REGISTER
+// 📝 REGISTER
 export async function signUp(
   email: string,
   password: string,
@@ -49,29 +54,29 @@ export async function signUp(
 
   const user = data.user;
 
+  // caso confirmação de email esteja ativa
   if (!user) {
-  Alert.alert(
-    'Verifique seu email',
-    'Enviamos um link de confirmação para você.'
-  );
-  return;
-}
+    Alert.alert(
+      "Verifique seu email",
+      "Enviamos um link de confirmação para você."
+    );
+    return;
+  }
 
-  const { error: profileError } = await supabase
-    .from('users')
-    .insert({
-      id: user.id,
-      name,
-      cpf,
-      email,
-    });
+  // salva dados adicionais
+  const { error: profileError } = await supabase.from("users").insert({
+    id: user.id,
+    name,
+    cpf,
+    email,
+  });
 
   if (profileError) throw profileError;
 
   return data;
 }
 
-// LOGOUT
+// 🚪 LOGOUT
 export async function signOut() {
   await supabase.auth.signOut();
 }

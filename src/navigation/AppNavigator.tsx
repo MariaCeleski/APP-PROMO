@@ -14,10 +14,9 @@ const { user, loading } = useContext(AuthContext);
     </View>
   );
 }
-
   return (
-    <NavigationContainer>
-      {user ? <AppStack /> : <AuthStack />}
-    </NavigationContainer>
-  );
+  <NavigationContainer key={user ? 'user' : 'guest'}>
+    {user ? <AppStack /> : <AuthStack />}
+  </NavigationContainer>
+);
 }
