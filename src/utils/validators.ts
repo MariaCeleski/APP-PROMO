@@ -55,9 +55,17 @@ export const registerSchema = z
       .email('Email inválido'),
 
     cpf: z
-      .string()
-      .min(11, 'CPF inválido')
-      .refine(isValidCPF, 'CPF inválido'),
+  .string()
+  .min(11, 'CPF inválido')
+  .refine((cpf) => {
+    const clean = cpf.replace(/\D/g, '');
+
+    // evita coisas muito erradas
+    if (!/^\d{11}$/.test(clean)) return false;
+
+    return true;
+  }, 
+  'CPF deve conter 11 números'),
 
     password: z
       .string()
@@ -73,3 +81,64 @@ export const registerSchema = z
     message: 'As senhas não coincidem',
     path: ['confirmPassword'],
   });
+
+  //VALIDADOR DE CPF REAL
+
+//   export function isValidCPF(cpf: string) {
+//   const cleanCPF = cpf.replace(/\D/g, '');
+
+//   if (cleanCPF.length !== 11) return false;
+
+//   // elimina CPFs inválidos conhecidos
+//   if (/^(\d)\1+$/.test(cleanCPF)) return false;
+
+//   let sum = 0;
+//   let remainder;
+
+//   // primeiro dígito
+//   for (let i = 1; i <= 9; i++) {
+//     sum += parseInt(cleanCPF.substring(i - 1, i)) * (11 - i);
+//   }
+
+//   remainder = (sum * 10) % 11;
+//   if (remainder === 10 || remainder === 11) remainder = 0;
+
+//   if (remainder !== parseInt(cleanCPF.substring(9, 10))) return false;
+
+//   sum = 0;
+
+//   // segundo dígito
+//   for (let i = 1; i <= 10; i++) {
+//     sum += parseInt(cleanCPF.substring(i - 1, i)) * (12 - i);
+//   }
+
+//   remainder = (sum * 10) % 11;
+//   if (remainder === 10 || remainder === 11) remainder = 0;
+
+//   if (remainder !== parseInt(cleanCPF.substring(10, 11))) return false;
+
+//   return true;
+// }
+
+// import { z } from 'zod';
+// import { isValidCPF } from './validators';
+
+// export const registerSchema = z.object({
+//   name: z.string().min(3, 'Nome obrigatório'),
+
+//   email: z.string().email('Email inválido'),
+
+//   cpf: z
+//     .string()
+//     .min(11, 'CPF inválido')
+//     .refine((cpf) => isValidCPF(cpf), {
+//       message: 'CPF inválido',
+//     }),
+
+//   password: z.string().min(6, 'Senha mínima 6 caracteres'),
+
+//   confirmPassword: z.string(),
+// }).refine((data) => data.password === data.confirmPassword, {
+//   message: 'Senhas não conferem',
+//   path: ['confirmPassword'],
+// });

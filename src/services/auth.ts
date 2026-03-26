@@ -1,7 +1,7 @@
 import { supabase } from "./supabase";
 import { Alert } from "react-native";
 
-// 🔐 LOGIN (EMAIL OU CPF)
+//  LOGIN (EMAIL OU CPF)
 export async function signIn(identifier: string, password: string) {
   let emailToLogin = identifier;
 
@@ -27,7 +27,7 @@ export async function signIn(identifier: string, password: string) {
     emailToLogin = userData.email;
   }
 
-  // 🔑 login com email
+  //  login com email
   const { data, error } = await supabase.auth.signInWithPassword({
     email: emailToLogin,
     password,
@@ -50,7 +50,10 @@ export async function signUp(
     password,
   });
 
-  if (error) throw error;
+  if (error) {
+  console.log('ERRO SIGNUP:', error);
+  throw error;
+}
 
   const user = data.user;
 

@@ -1,43 +1,64 @@
-import { TouchableOpacity, Text, ActivityIndicator, StyleSheet } from 'react-native';
+import { Text, TouchableWithoutFeedback, Animated, StyleSheet } from 'react-native';
+import { useRef } from 'react';
 
 type Props = {
   title: string;
   onPress: () => void;
   loading?: boolean;
-  disabled?: boolean;
 };
 
-export default function Button({ title, onPress, loading = false, disabled = false }: Props) {
+export default function Button({ title, onPress, loading }: Props) {
+  const scale = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scale, {
+      toValue: 0.95,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scale, {
+      toValue: 1,
+      friction: 3,
+      useNativeDriver: true,
+    }).start();
+  };
+
   return (
-    <TouchableOpacity
-      style={[styles.button, (disabled || loading) && styles.disabled]}
+    <TouchableWithoutFeedback
       onPress={onPress}
-      activeOpacity={0.8}
-      disabled={disabled || loading}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      disabled={loading}
     >
-      {loading ? (
-        <ActivityIndicator color="#FFF" />
-      ) : (
-        <Text style={styles.text}>{title}</Text>
-      )}
-    </TouchableOpacity>
+      <Animated.View
+        style={[
+          styles.button,
+          {
+            transform: [{ scale }],
+            opacity: loading ? 0.6 : 1,
+          },
+        ]}
+      >
+        <Text style={styles.text}>
+          {loading ? 'Carregando...' : title}
+        </Text>
+      </Animated.View>
+    </TouchableWithoutFeedback>
   );
 }
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: '#2563EB',
-    paddingVertical: 14,
-    borderRadius: 10,
+    backgroundColor: '#1E5FD8',
+    padding: 16,
+    borderRadius: 16,
     alignItems: 'center',
-    marginTop: 10,
   },
   text: {
-    color: '#FFF',
+    color: '#fff',
+    fontWeight: '700',
     fontSize: 16,
-    fontWeight: '600',
-  },
-  disabled: {
-    opacity: 0.6,
   },
 });
