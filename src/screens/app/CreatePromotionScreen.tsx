@@ -1,10 +1,15 @@
 import { TouchableOpacity, Text, StyleSheet, Animated, View } from 'react-native';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 export default function PromotionCard({ item, onToggleFavorite }: any) {
   const [liked, setLiked] = useState(item.isFavorite);
 
   const scale = useRef(new Animated.Value(1)).current;
+
+  // 🔥 SINCRONIZA COM O ITEM
+  useEffect(() => {
+    setLiked(item.isFavorite);
+  }, [item.isFavorite]);
 
   function animateHeart() {
     Animated.sequence([
@@ -21,25 +26,32 @@ export default function PromotionCard({ item, onToggleFavorite }: any) {
     ]).start();
   }
 
+  function handlePress() {
+    animateHeart();
+
+    // 🔥 atualiza UI imediatamente
+    const newValue = !liked;
+    setLiked(newValue);
+
+    // 🔥 envia valor correto pra tela
+    onToggleFavorite({
+      ...item,
+      isFavorite: newValue,
+    });
+  }
+
   return (
     <View style={styles.card}>
       
       {/* ❤️ BOTÃO */}
-      <TouchableOpacity
-        style={styles.heart}
-        onPress={() => {
-          animateHeart();
-          setLiked(!liked); // UI local
-          onToggleFavorite(item); // lógica vem da tela
-        }}
-      >
+      <TouchableOpacity style={styles.heart} onPress={handlePress}>
         <Animated.Text style={{ fontSize: 20, transform: [{ scale }] }}>
           {liked ? '❤️' : '🤍'}
         </Animated.Text>
       </TouchableOpacity>
 
       <Text style={styles.title}>{item.title}</Text>
-      <Text style={styles.price}>R$ {item.price}</Text>
+      <Text style={styles.price}>R$ {Number(item.price).toFixed(2)}</Text>
       <Text style={styles.store}>{item.store}</Text>
         
     </View>

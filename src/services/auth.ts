@@ -1,14 +1,13 @@
 import { supabase } from "./supabase";
 import { Alert } from "react-native";
 
-//  LOGIN (EMAIL OU CPF)
+// ======================
+// LOGIN (EMAIL OU CPF)
+// ======================
 export async function signIn(identifier: string, password: string) {
   let emailToLogin = identifier;
 
-  // remove tudo que não for número
   const cleanIdentifier = identifier.replace(/\D/g, "");
-
-  // verifica se é CPF
   const isCPF = /^\d{11}$/.test(cleanIdentifier);
 
   if (isCPF) {
@@ -27,7 +26,6 @@ export async function signIn(identifier: string, password: string) {
     emailToLogin = userData.email;
   }
 
-  //  login com email
   const { data, error } = await supabase.auth.signInWithPassword({
     email: emailToLogin,
     password,
@@ -38,7 +36,9 @@ export async function signIn(identifier: string, password: string) {
   return data;
 }
 
-// 📝 REGISTER
+// ======================
+// REGISTER
+// ======================
 export async function signUp(
   email: string,
   password: string,
@@ -51,13 +51,12 @@ export async function signUp(
   });
 
   if (error) {
-  console.log('ERRO SIGNUP:', error);
-  throw error;
-}
+    console.log("ERRO SIGNUP:", error);
+    throw error;
+  }
 
   const user = data.user;
 
-  // caso confirmação de email esteja ativa
   if (!user) {
     Alert.alert(
       "Verifique seu email",
@@ -66,7 +65,6 @@ export async function signUp(
     return;
   }
 
-  // salva dados adicionais
   const { error: profileError } = await supabase.from("users").insert({
     id: user.id,
     name,
@@ -79,7 +77,9 @@ export async function signUp(
   return data;
 }
 
-// 🚪 LOGOUT
+// ======================
+// LOGOUT
+// ======================
 export async function signOut() {
   await supabase.auth.signOut();
 }

@@ -51,14 +51,18 @@ export default function Button({ title, onPress, loading }: Props) {
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: '#1E5FD8',
-    padding: 16,
-    borderRadius: 16,
+    backgroundColor: '#13728f',
+    paddingVertical: 14,
+    borderRadius: 10,
     alignItems: 'center',
+    marginTop: 10,
   },
   text: {
-    color: '#fff',
-    fontWeight: '700',
+    color: '#FFF',
     fontSize: 16,
+    fontWeight: '600',
+  },
+  disabled: {
+    opacity: 0.6,
   },
 });
