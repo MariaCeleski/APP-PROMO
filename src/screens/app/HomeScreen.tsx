@@ -20,6 +20,8 @@ import { getPromotions } from "../../services/promotions";
 import Button from "../../components/ui/Button";
 import FloatingButton from "../../components/ui/FloatingButton";
 import CategoryFilter from "../../components/CategoryFilter";
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback } from "react";
 
 export default function HomeScreen({ navigation }: any) {
   const { user } = useContext(AuthContext);
@@ -74,9 +76,16 @@ export default function HomeScreen({ navigation }: any) {
     }
   }
 
-  useEffect(() => {
+ 
+useFocusEffect(
+  useCallback(() => {
+    if (!user?.id) return;
+
+    setPage(1);
+    setHasMore(true);
     loadData(1);
-  }, [user?.id]);
+  }, [user?.id])
+);
 
   // =========================
   // REFRESH
