@@ -1,48 +1,21 @@
 import {
-  TouchableOpacity,
+  View,
   Text,
   StyleSheet,
+  TouchableOpacity,
   Animated,
-  View,
   ImageBackground,
 } from "react-native";
-import { useState, useRef, useEffect } from "react";
+import { useRef } from "react";
 
 export default function PromotionCard({ item, onToggleFavorite }: any) {
-  const [liked, setLiked] = useState(item.isFavorite);
-
   const scale = useRef(new Animated.Value(1)).current;
 
-  // 🔥 sincroniza com o estado da lista
-  useEffect(() => {
-    setLiked(item.isFavorite);
-  }, [item.isFavorite]);
-
-  function animateHeart() {
+  function animate() {
     Animated.sequence([
-      Animated.timing(scale, {
-        toValue: 1.3,
-        duration: 150,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scale, {
-        toValue: 1,
-        duration: 150,
-        useNativeDriver: true,
-      }),
+      Animated.timing(scale, { toValue: 1.3, duration: 150, useNativeDriver: true }),
+      Animated.timing(scale, { toValue: 1, duration: 150, useNativeDriver: true }),
     ]).start();
-  }
-
-  function handlePress() {
-    animateHeart();
-
-    const newValue = !liked;
-    setLiked(newValue);
-
-    onToggleFavorite({
-      ...item,
-      isFavorite: newValue,
-    });
   }
 
   return (
@@ -51,29 +24,34 @@ export default function PromotionCard({ item, onToggleFavorite }: any) {
         source={{
           uri:
             item.image_url ||
-            "https://via.placeholder.com/300x200.png?text=Promoção",
+            "https://via.placeholder.com/300x200",
         }}
         style={styles.image}
         imageStyle={{ borderRadius: 16 }}
       >
-        {/* 🔥 OVERLAY */}
         <View style={styles.overlay} />
 
-        {/* ❤️ FAVORITO */}
-        <TouchableOpacity style={styles.heart} onPress={handlePress}>
-          <Animated.Text style={{ fontSize: 22, transform: [{ scale }] }}>
-            {liked ? "❤️" : "🤍"}
+        {/* ❤️ */}
+        <TouchableOpacity
+          style={styles.heart}
+          onPress={() => {
+            animate();
+            onToggleFavorite(item);
+          }}
+        >
+          <Animated.Text style={{ transform: [{ scale }], fontSize: 22 }}>
+            {item.isFavorite ? "❤️" : "🤍"}
           </Animated.Text>
         </TouchableOpacity>
 
-        {/* 💰 PREÇO */}
+        {/* 💰 */}
         <View style={styles.priceBadge}>
           <Text style={styles.price}>
             R$ {Number(item.price).toFixed(2)}
           </Text>
         </View>
 
-        {/* 📄 INFO */}
+        {/* INFO */}
         <View style={styles.info}>
           <Text style={styles.title}>{item.title}</Text>
           <Text style={styles.store}>{item.store}</Text>
@@ -89,14 +67,14 @@ const styles = StyleSheet.create({
   },
 
   image: {
-    height: 160,
-    justifyContent: "space-between",
+    height: 180,
     padding: 12,
+    justifyContent: "space-between",
   },
 
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.35)",
+    backgroundColor: "rgba(0,0,0,0.3)",
     borderRadius: 16,
   },
 
@@ -104,19 +82,17 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 10,
     right: 10,
-    zIndex: 10,
   },
 
   priceBadge: {
-    alignSelf: "flex-start",
     backgroundColor: "#D4AF37",
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
+    alignSelf: "flex-start",
   },
 
   price: {
-    color: "#000",
     fontWeight: "bold",
   },
 
@@ -132,6 +108,5 @@ const styles = StyleSheet.create({
 
   store: {
     color: "#D9D9D9",
-    fontSize: 14,
   },
 });

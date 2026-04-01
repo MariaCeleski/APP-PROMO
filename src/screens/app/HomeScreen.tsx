@@ -8,10 +8,14 @@ import {
   TouchableOpacity,
 } from "react-native";
 
-import { useContext, useEffect, useState, useRef } from "react";
+import { useContext, useEffect, useState, useRef, useCallback } from "react";
 import { LinearGradient } from "expo-linear-gradient";
+import { useFocusEffect } from "@react-navigation/native";
 
+import StoriesBar from "../../components/StoriesBar";
 import PromotionCard from "../../components/PromotionCard";
+import CategoryFilter from "../../components/CategoryFilter";
+
 import { AuthContext } from "../../contexts/AuthContext";
 import { signOut } from "../../services/auth";
 import { getUserProfile } from "../../services/user";
@@ -19,9 +23,6 @@ import { getPromotions } from "../../services/promotions";
 
 import Button from "../../components/ui/Button";
 import FloatingButton from "../../components/ui/FloatingButton";
-import CategoryFilter from "../../components/CategoryFilter";
-import { useFocusEffect } from "@react-navigation/native";
-import { useCallback } from "react";
 
 export default function HomeScreen({ navigation }: any) {
   const { user } = useContext(AuthContext);
@@ -59,14 +60,13 @@ export default function HomeScreen({ navigation }: any) {
         // remove duplicados
         return merged.filter(
           (item, index, self) =>
-            index === self.findIndex((t) => t.id === item.id)
+            index === self.findIndex((t) => t.id === item.id),
         );
       });
 
       if (!promoData || promoData.length < 5) {
         setHasMore(false);
       }
-
     } catch (err) {
       console.log("ERRO:", err);
     } finally {
@@ -76,16 +76,15 @@ export default function HomeScreen({ navigation }: any) {
     }
   }
 
- 
-useFocusEffect(
-  useCallback(() => {
-    if (!user?.id) return;
+  useFocusEffect(
+    useCallback(() => {
+      if (!user?.id) return;
 
-    setPage(1);
-    setHasMore(true);
-    loadData(1);
-  }, [user?.id])
-);
+      setPage(1);
+      setHasMore(true);
+      loadData(1);
+    }, [user?.id]),
+  );
 
   // =========================
   // REFRESH
@@ -116,8 +115,8 @@ useFocusEffect(
   function handleToggleFavorite(item: any) {
     setPromotions((prev) =>
       prev.map((p) =>
-        p.id === item.id ? { ...p, isFavorite: !p.isFavorite } : p
-      )
+        p.id === item.id ? { ...p, isFavorite: !p.isFavorite } : p,
+      ),
     );
   }
 
@@ -128,9 +127,7 @@ useFocusEffect(
     selectedCategory === "Todos"
       ? promotions
       : promotions.filter(
-          (p) =>
-            p.category?.toLowerCase() ===
-            selectedCategory.toLowerCase()
+          (p) => p.category?.toLowerCase() === selectedCategory.toLowerCase(),
         );
 
   // =========================
@@ -154,9 +151,10 @@ useFocusEffect(
   // =========================
   return (
     <View style={styles.container}>
-      
       {/* HEADER */}
-      <Animated.View style={{ opacity: fadeAnim, transform: [{ scale: scaleAnim }] }}>
+      <Animated.View
+        style={{ opacity: fadeAnim, transform: [{ scale: scaleAnim }] }}
+      >
         <LinearGradient
           colors={["#0F3FA8", "#1E5FD8", "#2C73E0"]}
           style={styles.card}
@@ -174,6 +172,11 @@ useFocusEffect(
         onSelect={setSelectedCategory}
       />
 
+      <StoriesBar
+        promotions={promotions.filter((p) => p.image_url)}
+       onPress={(item: any) => navigation.navigate("StoryView", { item })}
+      />
+
       {/* LISTA */}
       <FlatList
         data={filteredPromotions}
@@ -184,10 +187,7 @@ useFocusEffect(
         onEndReached={loadMore}
         onEndReachedThreshold={0.5}
         renderItem={({ item }) => (
-          <PromotionCard
-            item={item}
-            onToggleFavorite={handleToggleFavorite}
-          />
+          <PromotionCard item={item} onToggleFavorite={handleToggleFavorite} />
         )}
         ListEmptyComponent={
           loading ? (
@@ -198,7 +198,9 @@ useFocusEffect(
             <TouchableOpacity
               onPress={() => navigation.navigate("CreatePromotion")}
             >
-              <Text style={{ color: "#D4AF37", textAlign: "center", marginTop: 40 }}>
+              <Text
+                style={{ color: "#D4AF37", textAlign: "center", marginTop: 40 }}
+              >
                 Criar sua primeira promoção 🚀
               </Text>
             </TouchableOpacity>
@@ -210,9 +212,7 @@ useFocusEffect(
       <Button title="Sair" onPress={signOut} />
 
       {/* FAB */}
-      <FloatingButton
-        onPress={() => navigation.navigate("CreatePromotion")}
-      />
+      <FloatingButton onPress={() => navigation.navigate("CreatePromotion")} />
     </View>
   );
 }
@@ -220,13 +220,17 @@ useFocusEffect(
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#2cc5e0",
-    padding: 20,
+    backgroundColor: "#0F172A",
+  },
+  content: {
+    paddingHorizontal: 16,
+    paddingTop: 10,
   },
 
   card: {
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 20,
+    marginBottom: 16,
   },
 
   title: {

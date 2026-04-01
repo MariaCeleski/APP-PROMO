@@ -1,68 +1,89 @@
-import { Text, TouchableWithoutFeedback, Animated, StyleSheet } from 'react-native';
-import { useRef } from 'react';
+import {
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  Animated,
+} from "react-native";
+import { useRef } from "react";
 
 type Props = {
   title: string;
   onPress: () => void;
   loading?: boolean;
+  disabled?: boolean;
 };
 
-export default function Button({ title, onPress, loading }: Props) {
+export default function Button({
+  title,
+  onPress,
+  loading,
+  disabled,
+}: Props) {
   const scale = useRef(new Animated.Value(1)).current;
 
-  const handlePressIn = () => {
+  function handlePressIn() {
     Animated.spring(scale, {
       toValue: 0.95,
       useNativeDriver: true,
     }).start();
-  };
+  }
 
-  const handlePressOut = () => {
+  function handlePressOut() {
     Animated.spring(scale, {
       toValue: 1,
-      friction: 3,
       useNativeDriver: true,
     }).start();
-  };
+  }
 
   return (
-    <TouchableWithoutFeedback
-      onPress={onPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      disabled={loading}
-    >
-      <Animated.View
+    <Animated.View style={{ transform: [{ scale }] }}>
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        disabled={disabled || loading}
         style={[
           styles.button,
-          {
-            transform: [{ scale }],
-            opacity: loading ? 0.6 : 1,
-          },
+          (disabled || loading) && styles.disabled,
         ]}
       >
-        <Text style={styles.text}>
-          {loading ? 'Carregando...' : title}
-        </Text>
-      </Animated.View>
-    </TouchableWithoutFeedback>
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.text}>{title}</Text>
+        )}
+      </TouchableOpacity>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: '#13728f',
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: 10,
+    backgroundColor: "#1E5FD8",
+    padding: 16,
+    borderRadius: 14,
+    alignItems: "center",
+    marginTop: 12,
+
+    // sombra iOS
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+
+    // sombra Android
+    elevation: 4,
   },
-  text: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
+
   disabled: {
     opacity: 0.6,
+  },
+
+  text: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
   },
 });

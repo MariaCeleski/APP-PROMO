@@ -1,4 +1,12 @@
-import { View, Text, StyleSheet, Alert, ScrollView } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Alert,
+  ScrollView,
+  ImageBackground,
+  TouchableOpacity,
+} from "react-native";
 
 import { useForm, Controller } from "react-hook-form";
 import { useContext, useState } from "react";
@@ -12,7 +20,8 @@ import { AuthContext } from "../../contexts/AuthContext";
 import { createPromotion, updatePromotion } from "../../services/promotions";
 
 import * as ImagePicker from "expo-image-picker";
-import { Image, TouchableOpacity } from "react-native";
+import * as ImageManipulator from "expo-image-manipulator";
+
 import { uploadImage } from "../../services/storage";
 
 type FormData = {
@@ -20,15 +29,20 @@ type FormData = {
   price: string;
   store: string;
   category: string;
-  image_url: string;
 };
 
 export default function CreatePromotionScreen({ navigation }: any) {
   const { user } = useContext(AuthContext);
-  const [loading, setLoading] = useState(false);
-
   const route = useRoute<any>();
   const editingItem = route.params?.item;
+
+  const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  const [image, setImage] = useState<string | null>(
+    editingItem?.image_url || null
+  );
 
   const { control, handleSubmit, reset } = useForm<FormData>({
     defaultValues: {
@@ -36,68 +50,86 @@ export default function CreatePromotionScreen({ navigation }: any) {
       price: editingItem?.price?.toString() || "",
       store: editingItem?.store || "",
       category: editingItem?.category || "",
-      image_url: editingItem?.image_url || "",
     },
   });
 
-  const [image, setImage] = useState<string | null>(
-    editingItem?.image_url || null,
-  );
-
+  // =========================
+  // 📸 PICK IMAGE + COMPRESS
+  // =========================
   async function pickImage() {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-    if (!permission.granted) {
-      alert("Permissão necessária!");
-      return;
-    }
-
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.7,
+      mediaTypes: ["images"],
+      quality: 1,
     });
 
     if (!result.canceled) {
-      setImage(result.assets[0].uri);
+      const asset = result.assets[0];
+
+      // 🔥 compressão
+      const compressed = await ImageManipulator.manipulateAsync(
+        asset.uri,
+        [{ resize: { width: 800 } }],
+        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
+      );
+
+      setImage(compressed.uri);
     }
   }
 
+  // =========================
+  // 🚀 SUBMIT
+  // =========================
   async function onSubmit(data: FormData) {
     try {
-      if (!user?.id) return;
-
       setLoading(true);
 
       let imageUrl = null;
 
-      if (image && !image.startsWith("http")) {
+      if (image) {
+        setUploading(true);
+
+        // 🔥 fake progress (UX top)
+        const interval = setInterval(() => {
+          setProgress((prev) => (prev < 90 ? prev + 10 : prev));
+        }, 200);
+
         imageUrl = await uploadImage(image, user.id);
+
+        clearInterval(interval);
+        setProgress(100);
       }
-
-      const payload = {
-        title: data.title,
-        price: Number(data.price),
-        store: data.store,
-        category: data.category,
-        image_url: imageUrl,
-      };
-
-      console.log("PAYLOAD:", payload);
 
       if (editingItem) {
-        await updatePromotion(editingItem.id, payload);
+        await updatePromotion(editingItem.id, {
+          ...data,
+          price: Number(data.price),
+          image_url: imageUrl,
+        });
       } else {
-        await createPromotion(payload, user.id); // ✅ CORRETO
+        await createPromotion(
+          {
+            ...data,
+            price: Number(data.price),
+            image_url: imageUrl,
+          },
+          user.id
+        );
       }
 
-      console.log("SALVOU REAL");
+      Alert.alert("Sucesso", "Promoção salva!");
 
       reset();
+      setImage(null);
+      setProgress(0);
+
       navigation.goBack();
-    } catch (error) {
+
+    } catch (error: any) {
       console.log("ERRO AO SALVAR:", error);
+      Alert.alert("Erro", error.message);
     } finally {
       setLoading(false);
+      setUploading(false);
     }
   }
 
@@ -110,25 +142,37 @@ export default function CreatePromotionScreen({ navigation }: any) {
         <Text style={styles.title}>
           {editingItem ? "Editar Promoção" : "Nova Promoção"}
         </Text>
-        {/*  AQUI FICA O PICKER DE IMAGEM */}
-        <TouchableOpacity onPress={pickImage} style={styles.imagePicker}>
-          {image ? (
-            <Image source={{ uri: image }} style={styles.image} />
-          ) : (
-            <Text style={{ color: "#fff" }}>Selecionar imagem</Text>
-          )}
+
+        {/* 📸 IMAGEM */}
+        <TouchableOpacity onPress={pickImage}>
+          <ImageBackground
+            source={{
+              uri:
+                image ||
+                "https://via.placeholder.com/300x200.png?text=Selecionar+Imagem",
+            }}
+            style={styles.image}
+            imageStyle={{ borderRadius: 16 }}
+          >
+            {!image && (
+              <Text style={styles.imageText}>📸 Selecionar imagem</Text>
+            )}
+          </ImageBackground>
         </TouchableOpacity>
 
+        {/* 📊 PROGRESS BAR */}
+        {uploading && (
+          <View style={styles.progressBar}>
+            <View style={[styles.progress, { width: `${progress}%` }]} />
+          </View>
+        )}
+
+        {/* FORM */}
         <Controller
           control={control}
           name="title"
           render={({ field: { onChange, value } }) => (
-            <Input
-              label="Título"
-              placeholder="Ex: Coca-Cola 2L"
-              value={value}
-              onChangeText={onChange}
-            />
+            <Input label="Título" value={value} onChangeText={onChange} />
           )}
         />
 
@@ -138,7 +182,6 @@ export default function CreatePromotionScreen({ navigation }: any) {
           render={({ field: { onChange, value } }) => (
             <Input
               label="Preço"
-              placeholder="Ex: 7.99"
               value={value}
               onChangeText={onChange}
               keyboardType="numeric"
@@ -150,12 +193,7 @@ export default function CreatePromotionScreen({ navigation }: any) {
           control={control}
           name="store"
           render={({ field: { onChange, value } }) => (
-            <Input
-              label="Loja"
-              placeholder="Ex: Mercado X"
-              value={value}
-              onChangeText={onChange}
-            />
+            <Input label="Loja" value={value} onChangeText={onChange} />
           )}
         />
 
@@ -163,32 +201,15 @@ export default function CreatePromotionScreen({ navigation }: any) {
           control={control}
           name="category"
           render={({ field: { onChange, value } }) => (
-            <Input
-              label="Categoria"
-              placeholder="Ex: mercado"
-              value={value}
-              onChangeText={onChange}
-            />
-          )}
-        />
-
-        <Controller
-          control={control}
-          name="image_url"
-          render={({ field: { onChange, value } }) => (
-            <Input
-              label="URL da imagem"
-              placeholder="https://..."
-              value={value}
-              onChangeText={onChange}
-            />
+            <Input label="Categoria" value={value} onChangeText={onChange} />
           )}
         />
 
         <Button
-          title={editingItem ? "Atualizar promoção" : "Salvar promoção"}
+          title={uploading ? "Enviando..." : "Salvar promoção"}
           onPress={handleSubmit(onSubmit)}
           loading={loading}
+          disabled={uploading}
         />
       </ScrollView>
     </LinearGradient>
@@ -208,18 +229,30 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
 
-  imagePicker: {
-    height: 160,
+  image: {
+    height: 180,
     borderRadius: 16,
-    backgroundColor: "#1E293B",
+    overflow: "hidden",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 20,
-    overflow: "hidden",
   },
 
-  image: {
-    width: "100%",
+  imageText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+
+  progressBar: {
+    height: 6,
+    backgroundColor: "#1E293B",
+    borderRadius: 10,
+    overflow: "hidden",
+    marginBottom: 20,
+  },
+
+  progress: {
     height: "100%",
+    backgroundColor: "#22C55E",
   },
 });

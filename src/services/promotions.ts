@@ -9,8 +9,8 @@ export async function getPromotions(page = 1, limit = 5) {
 
   const { data, error } = await supabase
     .from("promotions")
-    .select("id, title, price, store, category, user_id, created_at, image_url")
-    .order("created_at", { ascending: false }) 
+    .select("*")
+    .order("created_at", { ascending: false })
     .range(from, to);
 
   if (error) throw error;
@@ -19,12 +19,17 @@ export async function getPromotions(page = 1, limit = 5) {
 }
 
 // =======================
-// CRIAR (VERSÃO CORRETA)
+// CRIAR (CORRETO)
 // =======================
-export async function createPromotion(data: any) {
+export async function createPromotion(data: any, userId: string) {
   const { error } = await supabase
     .from('promotions')
-    .insert(data);
+    .insert([
+      {
+        ...data,
+        user_id: userId,
+      },
+    ]);
 
   if (error) throw error;
 }
