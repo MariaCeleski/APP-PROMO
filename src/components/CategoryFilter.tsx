@@ -5,7 +5,9 @@ const categories = [
   { name: "Mercado", icon: "🛒" },
   { name: "Restaurante", icon: "🍔" },
   { name: "Farmácia", icon: "💊" },
-  { name: "Eletrônicos", icon: "📱" },
+  { name: "Eletrônico", icon: "📱" },
+  { name: "Loja", icon: "🛒" },
+  { name: "Conveniência", icon: "🛒" },
 ];
 
 export default function CategoryFilter({ selected, onSelect }: any) {
@@ -32,23 +34,23 @@ export default function CategoryFilter({ selected, onSelect }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexDirection: "row",
-    gap: 10,
-    marginVertical: 10,
-  },
+ container: {
+  flexDirection: "row",
+  gap: 10,
+  marginBottom: 16,
+},
 
   item: {
-    backgroundColor: "#1E293B",
-    padding: 12,
-    borderRadius: 12,
-    alignItems: "center",
-    width: 80,
-  },
+  paddingVertical: 8,
+  paddingHorizontal: 14,
+  borderRadius: 12,
+  backgroundColor: "#1E293B",
+  marginRight: 8,
+},
 
-  active: {
-    backgroundColor: "#1E5FD8",
-  },
+ active: {
+  backgroundColor: "#1E5FD8",
+},
 
   icon: {
     fontSize: 20,

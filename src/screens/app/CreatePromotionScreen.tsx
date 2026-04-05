@@ -23,6 +23,7 @@ import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from "expo-image-manipulator";
 
 import { uploadImage } from "../../services/storage";
+import CategorySelect from "../../components/CategorySelect";
 
 type FormData = {
   title: string;
@@ -40,9 +41,8 @@ export default function CreatePromotionScreen({ navigation }: any) {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  const [image, setImage] = useState<string | null>(
-    editingItem?.image_url || null
-  );
+  // ✅ Agora tipado corretamente como array de strings
+  const [images, setImages] = useState<string[]>([]);
 
   const { control, handleSubmit, reset } = useForm<FormData>({
     defaultValues: {
@@ -56,24 +56,27 @@ export default function CreatePromotionScreen({ navigation }: any) {
   // =========================
   // 📸 PICK IMAGE + COMPRESS
   // =========================
-  async function pickImage() {
+  async function pickImages() {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      quality: 1,
+      mediaTypes: "images", // ✅ string literal
+      allowsMultipleSelection: true,
+      quality: 0.7,
     });
 
     if (!result.canceled) {
-      const asset = result.assets[0];
-
-      // 🔥 compressão
-      const compressed = await ImageManipulator.manipulateAsync(
-        asset.uri,
-        [{ resize: { width: 800 } }],
-        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
-      );
-
-      setImage(compressed.uri);
+      // ✅ map para extrair apenas os URIs
+      const uris = result.assets.map((asset) => asset.uri);
+      setImages(uris);
     }
+  }
+
+  async function uploadAllImages() {
+    const urls: string[] = [];
+    for (const uri of images) {
+      const url = await uploadImage(uri, user.id);
+      urls.push(url);
+    }
+    return urls;
   }
 
   // =========================
@@ -82,18 +85,17 @@ export default function CreatePromotionScreen({ navigation }: any) {
   async function onSubmit(data: FormData) {
     try {
       setLoading(true);
+      setUploading(true);
 
-      let imageUrl = null;
+      let imageUrls: string[] = [];
 
-      if (image) {
-        setUploading(true);
-
+      if (images.length > 0) {
         // 🔥 fake progress (UX top)
         const interval = setInterval(() => {
           setProgress((prev) => (prev < 90 ? prev + 10 : prev));
         }, 200);
 
-        imageUrl = await uploadImage(image, user.id);
+        imageUrls = await uploadAllImages();
 
         clearInterval(interval);
         setProgress(100);
@@ -103,30 +105,27 @@ export default function CreatePromotionScreen({ navigation }: any) {
         await updatePromotion(editingItem.id, {
           ...data,
           price: Number(data.price),
-          image_url: imageUrl,
+          image_urls: imageUrls,
         });
       } else {
         await createPromotion(
           {
             ...data,
             price: Number(data.price),
-            image_url: imageUrl,
+            image_urls: imageUrls,
           },
-          user.id
+          user.id,
         );
       }
 
       Alert.alert("Sucesso", "Promoção salva!");
-
       reset();
-      setImage(null);
+      setImages([]); // ✅ array vazio
       setProgress(0);
-
       navigation.goBack();
-
     } catch (error: any) {
       console.log("ERRO AO SALVAR:", error);
-      Alert.alert("Erro", error.message);
+      Alert.alert("Erro", error.message || "Erro inesperado");
     } finally {
       setLoading(false);
       setUploading(false);
@@ -144,17 +143,17 @@ export default function CreatePromotionScreen({ navigation }: any) {
         </Text>
 
         {/* 📸 IMAGEM */}
-        <TouchableOpacity onPress={pickImage}>
+        <TouchableOpacity onPress={pickImages}>
           <ImageBackground
             source={{
               uri:
-                image ||
+                images[0] ||
                 "https://via.placeholder.com/300x200.png?text=Selecionar+Imagem",
             }}
             style={styles.image}
             imageStyle={{ borderRadius: 16 }}
           >
-            {!image && (
+            {images.length === 0 && (
               <Text style={styles.imageText}>📸 Selecionar imagem</Text>
             )}
           </ImageBackground>
@@ -197,19 +196,22 @@ export default function CreatePromotionScreen({ navigation }: any) {
           )}
         />
 
+        <Text style={{ color: "#fff", marginBottom: 8 }}>Categoria</Text>
+
         <Controller
           control={control}
           name="category"
           render={({ field: { onChange, value } }) => (
-            <Input label="Categoria" value={value} onChangeText={onChange} />
+            <CategorySelect value={value} onChange={onChange} />
           )}
         />
 
         <Button
-          title={uploading ? "Enviando..." : "Salvar promoção"}
-          onPress={handleSubmit(onSubmit)}
-          loading={loading}
-          disabled={uploading}
+          title="Salvar promoção"
+          onPress={() => {
+            console.log("CLICOU NO BOTÃO");
+            handleSubmit(onSubmit)();
+          }}
         />
       </ScrollView>
     </LinearGradient>
