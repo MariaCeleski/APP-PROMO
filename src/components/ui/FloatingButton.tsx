@@ -1,4 +1,4 @@
-import { TouchableOpacity, Text, StyleSheet, Animated, View } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, Animated } from 'react-native';
 import { useRef } from 'react';
 
 export default function FloatingButton({ onPress }: any) {
@@ -27,8 +27,7 @@ export default function FloatingButton({ onPress }: any) {
         },
       ]}
     >
-
-       <TouchableOpacity
+      <TouchableOpacity
         activeOpacity={0.8}
         onPress={onPress}
         onPressIn={handlePressIn}
@@ -36,51 +35,36 @@ export default function FloatingButton({ onPress }: any) {
       >
         <Text style={styles.text}>＋</Text>
       </TouchableOpacity>
-
-       {/* ÍCONE */}
-      <View style={styles.button}>
-        <Text style={styles.plus}>+</Text>
-      </View>
-
-      {/* PLACEHOLDER */}
-      <Text style={styles.label}>Nova promoção</Text>
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  
   container: {
-    position: "absolute",
-    bottom: 90,
-    right: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
+    position: 'absolute',
+    bottom: 30,
+    right: 20,
+    backgroundColor: '#1E5FD8',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
 
-  button: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "#1E5FD8",
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
+
+    // sombra iOS
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 4 },
+
+    // sombra Android
     elevation: 6,
   },
 
-  plus: {
-    color: "#fff",
-    fontSize: 28,
-    fontWeight: "bold",
-  },
-
-  label: {
-    backgroundColor: "#1E293B",
-    color: "#fff",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 10,
-    fontSize: 13,
+  text: {
+    color: '#fff',
+    fontSize: 30,
+    fontWeight: 'bold',
   },
 });
